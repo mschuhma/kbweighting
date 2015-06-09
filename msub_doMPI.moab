@@ -5,10 +5,10 @@
 #MOAB -N r_mpi_igraph
 #
 # Request number of nodes and CPU cores per node for job
-#MOAB -l nodes=1:ppn=4
+#MOAB -l nodes=2:ppn=16
 #
 # Estimated wallclock time for job
-#MOAB -l walltime=00:05:00
+#MOAB -l walltime=01:00:00
 #
 # Write standard output and errors in same file
 #MOAB -j oe 
