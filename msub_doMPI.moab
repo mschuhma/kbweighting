@@ -1,0 +1,33 @@
+#!/bin/sh 
+########## Begin MOAB/Slurm header ##########
+#
+# Give job a reasonable name
+#MOAB -N r_mpi_igraph
+#
+# Request number of nodes and CPU cores per node for job
+#MOAB -l nodes=1:ppn=4
+#
+# Estimated wallclock time for job
+#MOAB -l walltime=00:05:00
+#
+# Write standard output and errors in same file
+#MOAB -j oe 
+#
+# Send mail when job begins, aborts and ends
+#MOAB -m bae
+#
+########### End MOAB header ##########
+
+echo "Working Directory:                    $PWD"
+echo "Running on host                       $HOSTNAME"
+echo "Job id:                               $MOAB_JOBID"
+echo "Job name:                             $MOAB_JOBNAME"
+echo "Number of nodes allocated to job:     $MOAB_NODECOUNT"
+echo "Number of cores allocated to job:     $MOAB_PROCCOUNT"
+
+# Setup R and Rmpi Environment
+module load math/R/3.1.2
+module load mpi/openmpi/1.8-intel-14.0
+
+mpirun R CMD BATCH --no-save --no-restore --slave igraph_sp_mpi.R
+
