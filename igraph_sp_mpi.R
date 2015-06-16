@@ -6,6 +6,7 @@
 dir.create(Sys.getenv("R_LIBS_USER"), showWarnings = FALSE, recursive = TRUE)
 
 library(doMPI)
+
 if (!is.installed("igraph")){
   install.packages("igraph", dependencies=TRUE, Sys.getenv("R_LIBS_USER"), repos = "http://cran.uni-muenster.de/")
 }
@@ -29,13 +30,13 @@ norm_weights <- function(weights) {
 }
 
 inv_x <- function(x, max_x) {
-  return(max_x - x)
+  return(1 + max_x - x)
 }
 
 
 ####### Load graph #######
 message("loading data")
-graph_file <- "data/eta-dataset-joern-hess.data.txt.dbpgraph.sample"
+graph_file <- gzfile("data/eta-dataset-joern-hess.data.txt.dbpgraph.gz")
 input <- read.csv(graph_file, header=F, sep = "", stringsAsFactors=F)
 g <- graph.data.frame(input[,1:2], directed=TRUE)
 weights <- input[,3:3]
@@ -55,26 +56,32 @@ n <- sum(cnt$freq)
 #weights_idf <- foreach (x=weights, .combine='c') %dopar% {idf(x, cnt, n)}
 weights_idf <- sapply(weights, idf, c(cnt, n))
 weights_idf <- norm_weights(weights_idf)
-write.csv(weights_idf, file="data/edge_weights_idf.data")
+edge_file <- gzfile("data/edge_weights_idf.data.gz")
+write.csv(weights_idf, file=edge_file)
 E(g)$weight <- weights_idf
-message("edge weights written to data/edge_weights_idf.data")
+message("Edge weights written to data/edge_weights_idf.data.gz")
 
 #Shortest path
-message("Vertex count ", length(V(g)));
-rs <- foreach (i=1:length(V(g))-1, .combine="cbind", .inorder=FALSE, .packages="igraph") %:%
-       foreach (j=i+1:length(V(g)), .inorder=FALSE, .combine="cbind", .packages="igraph") %:% 
-        when(length(V(g)[i]$name)*length(V(g)[j]$name) > 0 && V(g)[i]$name <= 955 && V(g)[j]$name <= 955) %dopar% {
-         n1 <- V(g)[i]
-         n2 <- V(g)[j]
-#         if (length(n1$name)*length(n2$name) > 0 && n1$name <= 955 && n2$name <= 955) {
-           val <- shortest.paths(g, v=n1, to=n2, mode="all");
-           r <- c(n1, n2, n1$name, n2$name, val)
-           r
-#         }
-  }
-write(rs, file="data/all_shortest_paths.data", append=FALSE, ncolumns=5)
+message("Vertex count ", length(V(g)) )
+name <- V(g)$name
 
-message("done")
+foreach (i=1:(length(V(g))-1), .inorder=FALSE, .packages=c("igraph")) %:% 
+    when(length(V(g)[i]$name) > 0 && as.numeric(V(g)[i]$name) <= 955) %dopar% {
+      n1 <- V(g)[i]
+      fname <- sprintf("data/all_shortest_paths_%s.gz", V(g)[i]$name)
+      if (file.exists(fname) || file.exists(sprintf("data/all_shortest_paths_%s", V(g)[i]$name)) ) {
+        message("Skipped starting node ", i)
+      }
+      else {
+       val <- shortest.paths(g, n1, to=V(g), mode="all", weights=NULL)
+       rs <- rbind(name, val)
+       write(rs, file=gzfile(fname), append=FALSE, ncolumns=2)
+       message("Finished starting node ", i)
+      }
+  }
+
+
+message("Finished all")
 
 ####### Cleanup #######
 # Shutdown the cluster and quit
