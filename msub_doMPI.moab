@@ -2,13 +2,14 @@
 ########## Begin MOAB/Slurm header ##########
 #
 # Give job a reasonable name
-#MOAB -N r_mpi_igraph
+#MOAB -N r_mpi_igraph_topk
 #
 # Request number of nodes and CPU cores per node for job
-#MOAB -l nodes=3:ppn=16
+#MOAB -l nodes=8:ppn=16
+#MOAB -v OMP_NUM_THREADS=16
 #
 # Estimated wallclock time for job
-#MOAB -l walltime=10:00:00
+#MOAB -l walltime=1:00:00:00
 #
 # Write standard output and errors in same file
 #MOAB -j oe 
@@ -16,7 +17,13 @@
 # Send mail when job begins, aborts and ends
 #MOAB -m bae
 #
-# Node type
+# Node type write M O A B - q f a t
+#
+# MPI Options
+#MOAB -v MPIRUN_OPTIONS="--bind-to core --map-by core"
+#If using more than one MPI task per node please set
+export KMP_AFFINITY=verbose,scatter  prints messages concerning the supported affinity 
+#KMP_AFFINITY Description: https://software.intel.com/en-us/node/524790#KMP_AFFINITY_ENVIRONMENT_VARIABLE
 ########### End MOAB header ##########
 
 echo "Working Directory:                    $PWD"
@@ -30,5 +37,7 @@ echo "Number of cores allocated to job:     $MOAB_PROCCOUNT"
 module load math/R/3.1.2
 module load mpi/openmpi/1.8-intel-14.0
 
-mpirun R CMD BATCH --no-save --no-restore --slave igraph_sp_mpi.R
+export TASK_COUNT=$((${MOAB_PROCCOUNT}/${OMP_NUM_THREADS}))
+echo "${EXECUTABLE} running on ${MOAB_PROCCOUNT} cores with ${TASK_COUNT} MPI-tasks and ${OMP_NUM_THREADS} threads"
 
+mpirun --bind-to core --map-by core R CMD BATCH --no-save --no-restore --slave igraph_sp_mpi.R
