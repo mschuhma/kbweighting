@@ -68,8 +68,7 @@ message("Edge weights written to data/edge_weights_idf.data.gz")
 message("Vertex count ", length(V(g)) )
 name <- V(g)$name
 
-foreach (i=1:(length(V(g))-1), .inorder=FALSE, .packages=c("igraph","plyr")) %:% 
-    when(length(V(g)[i]$name) > 0 && as.numeric(V(g)[i]$name) <= 955) %dopar% {
+foreach (i=1:(length(V(g))-1), .inorder=FALSE, .packages=c("igraph","plyr")) %dopar% {
       n1 <- V(g)[i]
       fname <- sprintf("data/all_shortest_paths_%s.gz", V(g)[i]$name)
       #if (file.exists(fname) || file.exists(sprintf("data/all_shortest_paths_%s", V(g)[i]$name)) ) {

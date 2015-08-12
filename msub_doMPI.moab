@@ -2,7 +2,7 @@
 ########## Begin MOAB/Slurm header ##########
 #
 # Give job a reasonable name
-#MOAB -N r_mpi_igraph_topk
+#MOAB -N r_mpi_igraph_all
 #
 # Request number of nodes and CPU cores per node for job
 #MOAB -l nodes=8:ppn=16
@@ -22,7 +22,7 @@
 # MPI Options
 #MOAB -v MPIRUN_OPTIONS="--bind-to core --map-by core"
 #If using more than one MPI task per node please set
-export KMP_AFFINITY=verbose,scatter  prints messages concerning the supported affinity 
+export KMP_AFFINITY=scatter
 #KMP_AFFINITY Description: https://software.intel.com/en-us/node/524790#KMP_AFFINITY_ENVIRONMENT_VARIABLE
 ########### End MOAB header ##########
 
